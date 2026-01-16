@@ -144,6 +144,46 @@ def _scrape_amazon(url: str, html: str) -> ProductData:
             if re.search(r"\b\d+\s*-?\s*day[s]?\s+return", txt, re.I):
                 returns = txt[:120]
                 break
+    
+        technical_details = None
+
+    # 1) Try Amazon technical details / product details tables
+    tech_table = soup.find(
+        "table",
+        id=re.compile(r"productDetails_techSpec|productDetails_detailBullets", re.I)
+    )
+
+    rows = []
+    if tech_table:
+        for row in tech_table.select("tr"):
+            cells = row.find_all(["th", "td"])
+            if len(cells) >= 2:
+                key = cells[0].get_text(" ", strip=True)
+                val = cells[1].get_text(" ", strip=True)
+                rows.append(f"{key}: {val}")
+
+    if rows:
+        technical_details = " | ".join(rows)
+    else:
+        # 2) Fallback: section under heading "Technical Details" / "Product Details"
+        heading = soup.find(
+            lambda tag: tag.name in ["h1", "h2", "h3", "span"]
+            and re.search(r"Technical Details|Product Details", tag.get_text(), re.I)
+        )
+        if heading:
+            container = heading.find_parent()
+            next_table = container.find_next("table")
+            if next_table:
+                rows = []
+                for row in next_table.select("tr"):
+                    cells = row.find_all(["th", "td"])
+                    if len(cells) >= 2:
+                        key = cells[0].get_text(" ", strip=True)
+                        val = cells[1].get_text(" ", strip=True)
+                        rows.append(f"{key}: {val}")
+                if rows:
+                    technical_details = " | ".join(rows)
+
 
     # Description
     full_text = soup.get_text(separator=" ", strip=True)
@@ -160,6 +200,7 @@ def _scrape_amazon(url: str, html: str) -> ProductData:
         ),
         returns=returns,
         description=description,
+        technical_details=technical_details,
     )
 
 
