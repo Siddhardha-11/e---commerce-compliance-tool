@@ -76,7 +76,12 @@ def _scrape_flipkart(url: str, html: str) -> ProductData:
         url=url,
         title=title[:150],
         seller=seller,
-        price=Price(mrp=mrp, deal=mrp, discount=discount),
+            price=Price(
+        mrp=mrp_price,
+        deal=deal_price,
+        discount=discount_text
+    ),
+
         returns=returns,
         description=description,
     )
@@ -89,38 +94,59 @@ def _scrape_amazon(url: str, html: str) -> ProductData:
     title_el = soup.select_one("#productTitle") or soup.select_one("h1 span")
     title = title_el.text.strip() if title_el else "No title found"
 
-    # Main deal price (buys now)
-    deal_whole = soup.select_one("span.a-price.aok-align-center span.a-price-whole")
-    deal_frac = soup.select_one("span.a-price.aok-align-center span.a-price-fraction")
-    deal_price = None
-    if deal_whole:
-        deal_str = deal_whole.text.replace(",", "")
-        if deal_frac:
-            deal_str = f"{deal_str}.{deal_frac.text}"
-        deal_price = _safe_float(deal_str)
 
-    # MRP / crossed price
-    mrp_span = soup.select_one("span.a-price.a-text-price span.a-price-whole")
-    mrp_frac_span = soup.select_one("span.a-price.a-text-price span.a-price-fraction")
+    # -------- PRICE BLOCK (DEAL + MRP) --------
+
     mrp_price = None
-    if mrp_span:
-        mrp_str = mrp_span.text.replace(",", "")
-        if mrp_frac_span:
-            mrp_str = f"{mrp_str}.{mrp_frac_span.text}"
-        mrp_price = _safe_float(mrp_str)
-    
-    if not mrp_price and not deal_price:
+    deal_price = None
 
+    # 1) MRP / crossed price: span.a-price.a-text-price (this is usually struck-through)
+    mrp_block = soup.select_one("span.a-price.a-text-price")
+    if mrp_block:
+        mrp_whole = mrp_block.select_one("span.a-price-whole")
+        mrp_frac = mrp_block.select_one("span.a-price-fraction")
+        if mrp_whole:
+            mrp_str = mrp_whole.text.replace(",", "").strip()
+            if mrp_frac:
+                mrp_str = f"{mrp_str}.{mrp_frac.text.strip()}"
+            mrp_price = _safe_float(mrp_str)
+
+    # 2) Deal price: first a-price that is NOT a-text-price (bold current price)
+    deal_block = None
+    for block in soup.select("span.a-price"):
+        classes = block.get("class", [])
+        if "a-text-price" not in classes:  # skip crossed MRP blocks
+            deal_block = block
+            break
+
+    if deal_block:
+        whole = deal_block.select_one("span.a-price-whole")
+        frac = deal_block.select_one("span.a-price-fraction")
+        if whole:
+            deal_str = whole.text.replace(",", "").strip()
+            if frac:
+                deal_str = f"{deal_str}.{frac.text.strip()}"
+            deal_price = _safe_float(deal_str)
+
+    # 3) Fallback: if nothing found, try generic ₹n,nnn pattern
+    if not mrp_price and not deal_price:
         text = soup.get_text(separator=" ", strip=True)
         generic_price = _extract_price(text)
         if generic_price:
-            # Treat this as deal price if nothing else is found
             deal_price = generic_price
-    
 
-    # Discount
-    discount_span = soup.find("span", string=re.compile(r"\d+% off", re.I))
-    discount_text = discount_span.get_text(strip=True) if discount_span else None
+    # Discount:
+    # 1) If Amazon shows explicit "18% off", read it.
+    discount_text = None
+    explicit_span = soup.find("span", string=re.compile(r"-?\d+%(\s*off)?", re.I))
+    if explicit_span:
+        discount_text = explicit_span.get_text(strip=True)
+
+    # 2) If not shown, but mrp and deal both exist, compute it.
+    if not discount_text and mrp_price and deal_price and mrp_price > deal_price:
+        pct = round((mrp_price - deal_price) / mrp_price * 100)
+        discount_text = f"{pct}% off"
+
 
     # Seller
     seller_el = soup.select_one("#sellerProfileTriggerId")
@@ -199,9 +225,9 @@ def _scrape_amazon(url: str, html: str) -> ProductData:
             discount=discount_text
         ),
         returns=returns,
-        description=description,
         technical_details=technical_details,
     )
+
 
 
 
