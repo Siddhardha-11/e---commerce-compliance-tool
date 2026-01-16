@@ -1,10 +1,25 @@
 # backend/evaluator.py - PERFECTLY FIXED
 from typing import List, Dict, Any
-from models import ProductData, ScanResult, Violation as ModelViolation
+from models import Price, ProductData, ScanResult, Violation as ModelViolation
 from rules import RULES
 import json
 import re
 from datetime import datetime
+
+from scraper import scrape_product
+
+def evaluate_url(url: str):
+    """
+    SINGLE ENTRY POINT
+    main.py should call ONLY this
+    """
+    print(f"🔍 Scraping product from URL: {url}")
+    
+    product = scrape_product(url)
+
+    print("⚖️ Running compliance evaluation...")
+    return evaluate_compliance(product)
+
 
 def evaluate_compliance(product: ProductData) -> ScanResult:
     """
@@ -65,16 +80,17 @@ def _get_relevant_rules(product: ProductData) -> List[Dict]:
 def _check_rule_against_product(rule: Dict, product: ProductData) -> Dict:
     """Map YOUR ProductData fields → rule checks"""
     field_mapping = {
-        "seller": product.seller_info,
+        "seller": product.seller,
         "price": product.price,
         "description": product.description,
-        "returns": None,  # Not scraped yet
-        "delivery": None,
-        "warranty": None,
-        "brand": None,
+        "returns": product.returns,
+        "delivery": product.delivery,
+        "warranty": product.warranty,
+        "brand": product.brand,
         "origin": None,
         "charges": None
     }
+
     
     missing_fields = []
     for required_field in rule.get("required_fields", []):
@@ -104,7 +120,8 @@ def _calculate_risk_score(violations_data: List[Dict]) -> int:
     risk_score = min(10, max(1, int(avg_score * 2.5)))
     return risk_score
 
-# FIXED TEST FUNCTION
+'''
+# TEST FUNCTION
 def test_with_your_data():
     """Test with YOUR scraper data - NO ERRORS"""
     from models import ProductData
@@ -112,7 +129,7 @@ def test_with_your_data():
     product = ProductData(
         url="https://www.amazon.in/",
         title="No title found",
-        price=None,
+        price=Price(),
         description=None,
         seller_info="Amazon",
         image_url=None
@@ -130,3 +147,4 @@ def test_with_your_data():
 
 if __name__ == "__main__":
     test_with_your_data()
+'''
