@@ -1,0 +1,37 @@
+/* Reset default browser styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Ensure full height layout */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* Default body styles */
+body {
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  background-color: #ffffff;
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Remove anchor underline globally */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Button focus outline fix */
+button {
+  outline: none;
+}
+
+html {
+  scroll-behavior: smooth;
+}
