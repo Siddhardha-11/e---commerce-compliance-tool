@@ -17,6 +17,7 @@ class ProductData(BaseModel):
     returns: Optional[str] = None
     warranty: Optional[str] = None
     delivery: Optional[str] = None
+    description: Optional[str] = None
     technical_details: Optional[str] = None
     timestamp: datetime = Field(default_factory=datetime.now)
 

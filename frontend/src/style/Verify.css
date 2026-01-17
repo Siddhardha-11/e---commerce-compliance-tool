@@ -16,18 +16,17 @@
   font-size: 44px !important;
   font-weight: 900 !important;
   color: #0b2545;
-  letter-spacing: -0.4px;
 }
 
 /* SUBTITLE */
 .hero-subtitle {
   font-size: 17px !important;
-  font-weight: 500;
   color: #475569;
+  font-weight: 500;
   margin-top: 6px;
 }
 
-/* INPUT PILL */
+/* INPUT */
 .hero-input-wrapper {
   margin: 26px auto 0;
   max-width: 850px;
@@ -39,15 +38,8 @@
   box-shadow: 0 22px 45px rgba(15, 23, 42, 0.18);
 }
 
-/* REMOVE MUI BORDER */
 .hero-input-wrapper fieldset {
   border: none !important;
-}
-
-/* INPUT TEXT */
-.hero-input-wrapper input {
-  font-size: 16px;
-  padding: 8px;
 }
 
 /* VERIFY BUTTON */
@@ -68,7 +60,6 @@
   transition: 0.2s ease;
 }
 
-
 /* LOADING */
 .loading-box {
   max-width: 200px;
@@ -76,51 +67,79 @@
   text-align: center;
 }
 
-/* DASHBOARD */
+/* ================================================= */
+/* DASHBOARD – HARD LOCKED */
+/* ================================================= */
 .verify-dashboard {
   max-width: 1200px;
   margin: auto;
   display: grid;
   grid-template-columns: 0.9fr 2.1fr;
   gap: 26px;
-  height: 420px;
+  border-radius: 22px;
+  height: 490px;
+  overflow: hidden;        /* 🔥 THIS WAS MISSING */
 }
 
+/* ================================================= */
 /* PRODUCT DETAILS */
+/* ================================================= */
 .details-card {
   padding: 24px;
   border-radius: 26px;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #7585d2;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  overflow: hidden;        /* 🔥 important */
 }
 
+.details-card .card-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* ================================================= */
 /* RIGHT PANEL */
+/* ================================================= */
 .right-panel {
   display: grid;
   grid-template-rows: 140px 1fr auto;
-  gap: 16px;
+  height: 100%;
+  overflow: hidden;       /* 🔥 important */
+  gap: 10px;
 }
 
+/* RISK METER */
 .risk-remain {
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* RULE CARDS */
+/* ================================================= */
+/* OBEY / VIOLATIONS */
+/* ================================================= */
 .rules-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  border-radius: 18px;
+  height: 100%;
+  overflow: hidden;        /* 🔥 important */
 }
 
 .rule-card {
-  padding: 20px;
+  padding: 15px;
   border-radius: 24px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  
   display: flex;
   flex-direction: column;
+  height: 100%;
+  overflow: hidden;        /* 🔥 important */
 }
 
 .obey {
@@ -131,12 +150,11 @@
   border-left: 4px solid #ef4444;
 }
 
-/* CARD TITLES */
 .card-title {
   font-size: 30px;
   font-weight: 900;
-  color: #0f172a;
-  margin-bottom: 20px!important;
+  color: #2254c7;
+  margin-bottom: 20px !important;
 }
 
 .obey-title {
@@ -146,11 +164,10 @@
 .not-obey-title {
   color: #dc2626;
 }
-
-/* SCROLLABLE CONTENT */
-.card-scroll {
-  max-height: 200px;
+.rule-card .card-scroll {
+  flex: 1;
   overflow-y: auto;
+  padding-right: 6px;
 }
 
 /* RULE ITEM */
@@ -163,12 +180,15 @@
 
 /* DOWNLOAD */
 .download-btn {
-  font-weight: 700;
-  color: #2563eb;
   align-self: center;
+  font-weight: 1000;
+  color: #2563eb;
+  margin-top: 10px !important;
 }
 
-/* RECOMMENDATION */
+/* ================================================= */
+/* RECOMMENDATION – NOW SAFE */
+/* ================================================= */
 .recommendation-box {
   max-width: 950px;
   margin: 50px auto 0;
@@ -181,12 +201,5 @@
 .recommendation-title {
   font-size: 36px ;
   font-weight: 1000;
-  color: white;
   margin-bottom: 15px !important;
-}
-
-.recommendation-text {
-  font-size: 18px;
-  line-height: 1.7;
-  color: white;
 }
