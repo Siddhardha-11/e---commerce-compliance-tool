@@ -6,7 +6,8 @@ from datetime import datetime
 from models import ScanRequest, ScanResult, ProductData, Violation
 from database import get_db, init_db, ScanRecord
 from rules import RULES
-
+from fastapi.responses import StreamingResponse
+from report_generator import generate_pdf_report
 
 # -------------------------------------------------
 # App Initialization
@@ -30,6 +31,17 @@ app.add_middleware(
 def on_startup():
     init_db()
 
+@app.post("/download-report")
+def download_report(result: dict):
+    pdf = generate_pdf_report(result)
+
+    return StreamingResponse(
+        pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": "attachment; filename=safebuy_report.pdf"
+        }
+    )
 
 # -------------------------------------------------
 # Utility Functions

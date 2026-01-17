@@ -15,10 +15,36 @@ import "../style/Verify.css";
 const Verify = () => {
   const [loading, setLoading] = useState(false);
   const [showResult, setShowResult] = useState(false);
-  
+
   // 1. New State for URL and API Data
   const [url, setUrl] = useState("");
   const [result, setResult] = useState(null);
+
+  const handleDownload = async () => {
+    if (!result) return;
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/download-report",
+        result,
+        { responseType: "blob" }
+      );
+
+      const url = window.URL.createObjectURL(
+        new Blob([response.data], { type: "application/pdf" })
+      );
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "SafeBuy_Report.pdf");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      alert("Failed to download report");
+    }
+  };
+
 
   const handleVerify = async () => {
     if (!url) return alert("Please enter a valid URL");
@@ -78,10 +104,11 @@ const Verify = () => {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             InputProps={{ disableUnderline: true }}
+            
           />
-          <Button 
-            className="hero-verify-btn" 
-            endIcon={<ArrowForwardIcon />} 
+          <Button
+            className="hero-verify-btn"
+            endIcon={<ArrowForwardIcon />}
             sx={{ "& .MuiButton-endIcon": { marginLeft: "3px" } }}
             onClick={handleVerify}
             disabled={loading}
@@ -166,6 +193,7 @@ const Verify = () => {
               <Button
                 className="download-btn"
                 startIcon={<DownloadIcon />}
+                onClick={handleDownload}
               >
                 DOWNLOAD REPORT
               </Button>
@@ -179,7 +207,7 @@ const Verify = () => {
             </Typography>
 
             <Typography className="recommendation-text">
-              {result.risk_score > 50 
+              {result.risk_score > 50
                 ? "Multiple compliance violations detected. The seller information or return policy is unclear. Proceed with extreme caution."
                 : "This product passes most standard compliance checks. Seller and pricing details appear transparent."}
             </Typography>
