@@ -54,7 +54,7 @@ const About = () => {
       {/* FEATURE CARDS */}
       <Grid container spacing={4}>
         {features.map((item, index) => (
-          <Grid item xs={12} md={3} key={index}>
+          <Grid item xs={12} md={6} key={index}>
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}

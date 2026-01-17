@@ -1,8 +1,10 @@
 import { Typography, Button } from "@mui/material";
 import { motion } from "framer-motion";
 import "../style/Hero.css";
+import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
+  const navigate = useNavigate();
   return (
     <div className="hero-container">
       {/* LEFT CONTENT */}
@@ -44,6 +46,7 @@ const Hero = () => {
             variant="contained"
             size="large"
             className="hero-button"
+            onClick={() => navigate("/verify")}
           >
             Verify Now
           </Button>

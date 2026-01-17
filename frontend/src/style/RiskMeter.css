@@ -1,0 +1,36 @@
+.ring-meter {
+  position: relative;
+  text-align: center;
+  animation: fadeIn 0.6s ease-in;
+}
+
+.ring-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.ring-text h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.ring-text span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #22c55e;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

@@ -38,11 +38,13 @@ if __name__ == "__main__":
     print(sample.model_dump_json(indent=2))
 
 class ScanResult(BaseModel):
-    id: Optional[int] = None
+    id: int | None = None
     timestamp: datetime
     product: ProductData
     risk_score: int
-    violations: List[Violation]
+    violations: list[Violation]
+    trust_index: dict  # {"score": int, "reasons": list[str]}
+
 
 # API Request Model
 class ScanRequest(BaseModel):

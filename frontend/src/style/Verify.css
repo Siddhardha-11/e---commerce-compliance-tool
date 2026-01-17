@@ -1,0 +1,100 @@
+.verify-page {
+  background: #f8fafc;
+  min-height: 100vh;
+  padding: 60px 40px;
+}
+
+/* TOP */
+.verify-top {
+  max-width: 1200px;
+  margin: 0 auto 50px;
+  text-align: center;
+}
+
+.subtitle {
+  color: #475569;
+  margin: 10px 0 25px;
+}
+
+.verify-input {
+  display: flex;
+  gap: 16px;
+  max-width: 800px;
+  margin: auto;
+}
+
+/* DASHBOARD */
+.verify-dashboard {
+  max-width: 1200px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1fr 2fr; /* STRICT 1:2 */
+  gap: 24px;
+  height: 420px; /* FIXED HEIGHT */
+}
+
+/* LEFT */
+.details-card {
+  height: 100%;
+  padding: 20px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* RIGHT */
+.right-panel {
+  display: grid;
+  grid-template-rows: 140px 1fr auto; /* risk | rules | button */
+  gap: 16px;
+}
+
+/* RISK */
+.risk-remain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* RULES */
+.rules-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.rule-card {
+  padding: 16px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.obey {
+  border-left: 4px solid #22c55e;
+}
+
+.not-obey {
+  border-left: 4px solid #ef4444;
+}
+
+/* SCROLL */
+.card-scroll {
+  margin-top: 10px;
+  overflow-y: auto;
+}
+
+/* DOWNLOAD */
+.download-btn {
+  align-self: flex-start;
+}
+
+/* RECOMMENDATION */
+.recommendation-box {
+  max-width: 1200px;
+  margin: 60px auto 0;
+  padding: 50px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+  color: white;
+}
