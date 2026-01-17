@@ -40,6 +40,7 @@ const Verify = () => {
     document.body.appendChild(link);
     link.click();
     link.remove();
+  // eslint-disable-next-line no-unused-vars
   } catch (err) {
     alert("Failed to download report");
   }
