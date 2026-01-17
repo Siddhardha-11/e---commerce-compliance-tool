@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from evaluator import infer_product_category
 from sqlalchemy.orm import Session
 from scraper import scrape_product, _fetch_html
 from dark_patterns import detect_dark_patterns
@@ -82,38 +83,40 @@ def build_field_index(product: ProductData) -> dict:
 
 
 def run_compliance_check(product: ProductData) -> dict:
-    """
-    Apply RULES from rules.py to the product.
-    A rule is violated if any of its required_fields is missing/False.
-    """
+    product_category = infer_product_category(product)
     field_values = build_field_index(product)
+
     violations: list[Violation] = []
 
     for rule in RULES:
-        rule_id = rule["id"]
-        severity = rule["severity"]
-        title = rule["title"]
-        required_fields = rule.get("required_fields", [])
+        rule_category = rule.get("category", "all")
 
-        # Check if all required fields are satisfied
+        # 🔥 CATEGORY FILTER (THIS IS THE FIX)
+        if rule_category != "all" and rule_category != product_category:
+            continue
+
         missing = []
-        for f in required_fields:
+        for f in rule.get("required_fields", []):
             if not field_values.get(f, False):
                 missing.append(f)
 
         if missing:
-            description = f"{title} – missing or unclear: {', '.join(missing)}"
-            suggestion = f"Ensure the following field(s) are clearly disclosed: {', '.join(missing)}."
             violations.append(
                 Violation(
-                    rule_id=rule_id,
-                    severity=severity,
-                    description=description,
-                    suggestion=suggestion,
+                    rule_id=rule["id"],
+                    severity=rule["severity"],
+                    description=(
+                        f"{rule['title']} – missing or unclear: "
+                        f"{', '.join(missing)}"
+                    ),
+                    suggestion=(
+                        f"Ensure the following field(s) are clearly disclosed: "
+                        f"{', '.join(missing)}."
+                    ),
                 )
             )
 
-    # Compute score from rule-based violations
+    # score calculation stays the same
     score = 100
     for v in violations:
         if v.severity.upper() == "HIGH":
