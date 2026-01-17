@@ -5,8 +5,11 @@ from datetime import datetime
 
 from models import ScanRequest, ScanResult, ProductData, Violation
 from database import get_db, init_db, ScanRecord
-from rules import RULES
 
+# IMPORTANT: evaluator is now the ONLY compliance engine
+from evaluator import evaluate_compliance, infer_product_category
+from fastapi.responses import StreamingResponse
+from report_generator import generate_pdf_report
 
 # -------------------------------------------------
 # App Initialization
@@ -30,106 +33,38 @@ app.add_middleware(
 def on_startup():
     init_db()
 
+@app.post("/download-report")
+def download_report(result: dict):
+    pdf = generate_pdf_report(result)
 
+    return StreamingResponse(
+        pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": "attachment; filename=safebuy_report.pdf"
+        }
+    )
 # -------------------------------------------------
-# Utility Functions
+# Trust Index (kept simple & realistic)
 # -------------------------------------------------
-def build_field_index(product: ProductData) -> dict:
-    tech = (product.technical_details or "").lower()
-
-    return {
-        # general
-        "seller": bool(product.seller),
-        "price": bool(product.price),
-        "returns": bool(product.returns),
-        "delivery": bool(product.delivery),
-        "title": bool(product.title),
-        "brand": bool(product.brand) or "brand" in tech,
-        "description": bool(product.description or tech),
-        "origin": "country of origin" in tech,
-        "grievance": "grievance" in tech,
-        "images": True,
-
-        # electronics
-        "warranty": bool(product.warranty) or "warranty" in tech,
-        "specifications": bool(product.technical_details),
-        "model_number": "model" in tech,
-        "voltage": "volt" in tech,
-        "energy_rating": "star" in tech,
-
-        # food
-        "expiry": "expiry" in tech or "best before" in tech,
-        "ingredients": "ingredients" in tech,
-        "fssai": "fssai" in tech,
-        "nutrition": "nutrition" in tech,
-
-        # health
-        "dosage": "dosage" in tech,
-        "disclaimer": "disclaimer" in tech,
-        "warning": "warning" in tech,
-    }
-
-
-def run_compliance_check(product: ProductData) -> dict:
-    # 🔥 Lazy imports (VERY IMPORTANT)
-    from evaluator import infer_product_category
-
-    category = infer_product_category(product)
-    field_index = build_field_index(product)
-
-    violations: list[Violation] = []
-
-    for rule in RULES:
-        rule_category = rule.get("category", "all")
-
-        if rule_category != "all" and rule_category != category:
-            continue
-
-        missing = [
-            f for f in rule.get("required_fields", [])
-            if not field_index.get(f, False)
-        ]
-
-        if missing:
-            violations.append(
-                Violation(
-                    rule_id=rule["id"],
-                    severity=rule["severity"],
-                    description=f"{rule['title']} – missing: {', '.join(missing)}",
-                    suggestion=f"Ensure disclosure of: {', '.join(missing)}",
-                )
-            )
-
-    score = 100
-    for v in violations:
-        score -= {"HIGH": 20, "MEDIUM": 10, "LOW": 5}.get(v.severity.upper(), 0)
-
-    return {
-        "category": category,
-        "score": max(0, score),
-        "violations": violations,
-    }
-
-
 def compute_trust_index(product: ProductData, violations: list[Violation]) -> dict:
-    tech = (product.technical_details or "").lower()
     score = 100
     reasons = []
-
-    if "country of origin" not in tech:
-        score -= 15
-        reasons.append("Country of origin not disclosed.")
 
     if not product.seller:
         score -= 10
         reasons.append("Seller information missing.")
 
     if not product.returns:
-        score -= 15
+        score -= 10
         reasons.append("Returns policy unclear.")
 
+    if not product.origin_country:
+        score -= 10
+        reasons.append("Country of origin not disclosed.")
+
     for v in violations:
-        score -= {"HIGH": 10, "MEDIUM": 5}.get(v.severity.upper(), 0)
+        score -= {"HIGH": 5, "MEDIUM": 3}.get(v.severity.upper(), 0)
 
     return {
         "score": max(0, min(score, 100)),
@@ -152,45 +87,60 @@ def root():
 
 @app.post("/scan", response_model=ScanResult)
 def scan_product(request: ScanRequest, db: Session = Depends(get_db)):
-    # 🔥 Lazy imports
+    # Lazy imports (avoid circular deps)
     from scraper import scrape_product, _fetch_html
     from dark_patterns import detect_dark_patterns
 
     url = request.url
 
+    # 1️⃣ Fetch & scrape
     html = _fetch_html(url)
     product = scrape_product(url)
 
-    compliance = run_compliance_check(product)
-    base_violations = compliance["violations"]
+    # 2️⃣ Category inference (lightweight)
+    product.category = infer_product_category(product)
 
+    # 3️⃣ Compliance evaluation (ONLY evaluator.py)
+    compliance_result = evaluate_compliance(product)
+    base_violations = [
+        Violation(**v) for v in compliance_result["violations"]
+    ]
+
+    # 4️⃣ Dark pattern detection (separate system)
     dark_findings = detect_dark_patterns(product, html)
     dark_violations = [
         Violation(
             rule_id=f.code,
             severity=f.severity,
             description=f.message,
-            suggestion="Review pricing/UX for dark patterns.",
+            suggestion="Review pricing/UX for potential dark patterns.",
         )
         for f in dark_findings
     ]
 
+    # 5️⃣ Merge violations
     all_violations = base_violations + dark_violations
 
-    risk_score = 100
-    for v in all_violations:
+    # 6️⃣ Risk score (single source)
+    risk_score = compliance_result["risk_score"]
+    for v in dark_violations:
         risk_score -= {"HIGH": 20, "MEDIUM": 10, "LOW": 5}.get(v.severity.upper(), 0)
 
+    risk_score = max(0, risk_score)
+
+    # 7️⃣ Trust index
     trust_index = compute_trust_index(product, all_violations)
 
+    # 8️⃣ Build response
     result = ScanResult(
         timestamp=datetime.utcnow(),
         product=product,
-        risk_score=max(0, risk_score),
+        risk_score=risk_score,
         violations=all_violations,
         trust_index=trust_index,
     )
 
+    # 9️⃣ Persist to DB
     record = ScanRecord(
         url=url,
         risk_score=result.risk_score,

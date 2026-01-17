@@ -19,7 +19,7 @@ const RiskMeter = ({ score }) => {
   const offset = circumference - (progress / 100) * circumference;
 
   const label =
-    score < 40 ? "Low Risk" : score < 70 ? "Medium Risk" : "High Risk";
+    score < 40 ? "Low trust" : score < 70 ? "Medium trust" : "High trust";
 
   return (
     <div className="ring-meter">
@@ -53,7 +53,7 @@ const RiskMeter = ({ score }) => {
       </svg>
 
       <div className="ring-text">
-        <h2>{progress} / 100</h2>
+        <h2>{progress} </h2>
         <span>{label}</span>
       </div>
     </div>

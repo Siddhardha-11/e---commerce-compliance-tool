@@ -19,8 +19,17 @@ class ProductData(BaseModel):
     delivery: Optional[str] = None
     description: Optional[str] = None
     technical_details: Optional[str] = None
+    category: Optional[str] = None 
     timestamp: datetime = Field(default_factory=datetime.now)
 
+    usage: Optional[str] = None
+    manufacturer: Optional[str] = None
+    origin_country: Optional[str] = None
+    ingredients: Optional[str] = None
+    expiry: Optional[str] = None
+    customer_care_contact: Optional[str] = None
+    importer: Optional[str] = None
+    packer: Optional[str] = None
 
 # Used by Person 3 (Compliance)
 class Violation(BaseModel):

@@ -1,173 +1,156 @@
-from typing import List, Dict
-from datetime import datetime
+from typing import List, Dict, Any
+import re
 
-from models import ProductData, ScanResult, Violation
 from rules import RULES
-from scraper import scrape_product
+from models import ProductData
+from ai_extractor import ai_parse_technical_details
 
 
-# =====================================================
-# CATEGORY INFERENCE
-# =====================================================
-def infer_product_category(product: ProductData) -> str:
-    """
-    Priority-based category inference.
-    Health & cosmetics override electronics.
-    """
+# --------------------------------------------------
+# RULE CONTROL
+# --------------------------------------------------
 
-    text = " ".join(
-        filter(
-            None,
-            [
-                getattr(product, "title", ""),
-                getattr(product, "description", ""),
-                getattr(product, "technical_details", ""),
-            ]
-        )
-    ).lower()
+SKIPPED_RULE_IDS = {
+    "EC-02", "EC-03", "EC-05", "EC-07", "EC-09",
+    "EC-11", "EC-12", "EC-15", "EC-ENV-01",
+    "EC-08-AMEND",
+    "CS-07", "CS-08",
+}
 
-    CATEGORY_KEYWORDS = {
-        "health": [
-            "medicine", "tablet", "capsule", "dosage",
-            "prescription", "ayurvedic", "supplement"
-        ],
-        "cosmetics": [
-            "sunscreen", "spf", "lotion", "cream",
-            "skincare", "skin", "uv", "pa++", "pa+++",
-            "dermatologically", "cosmetic"
-        ],
-        "food": [
-            "ingredients", "nutrition", "fssai",
-            "expiry", "best before", "calories"
-        ],
-        "clothing": [
-            "fabric", "cotton", "polyester",
-            "shirt", "jeans", "dress", "size"
-        ],
-        "toys": [
-            "toy", "kids", "child", "age"
-        ],
-        "books": [
-            "isbn", "author", "publisher", "edition"
-        ],
-        "electronics": [
-            "battery", "charger", "adapter",
-            "usb", "bluetooth", "voltage", "watt"
-        ],
-        "appliances": [
-            "refrigerator", "washing machine",
-            "microwave", "air conditioner"
-        ],
-    }
+ADVISORY_RULE_IDS = {
+    "EC-10", "CS-05", "CS-06",
+}
 
-    # 🔥 PRIORITY ORDER (IMPORTANT)
-    PRIORITY = [
-        "health",
-        "cosmetics",
-        "food",
-        "clothing",
-        "toys",
-        "books",
-        "electronics",
-        "appliances",
-    ]
-
-    for category in PRIORITY:
-        if any(k in text for k in CATEGORY_KEYWORDS[category]):
-            return category
-
-    return "all"
+UNVERIFIABLE_FIELDS = {
+    "ingredients", "expiry", "batch_no",
+    "cruelty_free_cert", "epr_registration_no",
+}
 
 
-# =====================================================
-# RULE SELECTION (THIS FIXES YOUR BUG)
-# =====================================================
+# --------------------------------------------------
+# FIELD ALIASES
+# --------------------------------------------------
 
-def get_applicable_rules(product_category: str) -> List[Dict]:
-    """
-    Returns only:
-    - 'all' rules
-    - rules matching product_category
-    """
-    return [
-        rule for rule in RULES
-        if rule["category"] == "all" or rule["category"] == product_category
-    ]
+FIELD_ALIASES = {
+    "brand": ["brand"],
+    "manufacturer": ["manufacturer"],
+    "origin": ["origin_country"],
+    "origin_country": ["origin_country"],
+    "usage": ["usage"],
+    "description": ["description"],
+    "returns": ["returns"],
+    "delivery": ["delivery"],
+    "price": ["price"],
+}
 
 
-# =====================================================
-# FIELD INDEX (SAFE ACCESS)
-# =====================================================
+# --------------------------------------------------
+# HELPERS
+# --------------------------------------------------
 
-def build_field_index(product: ProductData) -> Dict[str, bool]:
-    """
-    Maps all possible rule fields to availability.
-    Missing fields = False (never crash).
-    """
-    fields = {}
+def _field_exists(product: ProductData, field: str) -> bool:
+    # 🔹 Special case: quantity inferred from title
+    if field == "quantity":
+        title = (product.title or "").lower()
+        return bool(re.search(r"\d+\s?(ml|l|g|kg)", title))
+
+    for attr in FIELD_ALIASES.get(field, [field]):
+        val = getattr(product, attr, None)
+        if val not in (None, "", [], {}):
+            return True
+
+    return False
+
+
+def _infer_from_title(product: ProductData) -> None:
+    title = (product.title or "").lower()
+
+    # Brand inference
+    if not product.brand and title:
+        product.brand = title.split()[0]
+
+    # Usage inference
+    if not product.usage:
+        if any(k in title for k in ["lotion", "cream", "moistur"]):
+            product.usage = "skin application"
+
+
+def _enrich_product_with_ai(product: ProductData) -> None:
+    if not product.technical_details:
+        _infer_from_title(product)
+        return
+
+    parsed = ai_parse_technical_details(product.technical_details)
+
+    for k, v in parsed.items():
+        if hasattr(product, k) and getattr(product, k) in (None, "", []):
+            setattr(product, k, v)
+
+    _infer_from_title(product)
+
+
+# --------------------------------------------------
+# MAIN ENGINE
+# --------------------------------------------------
+
+def evaluate_compliance(product: ProductData) -> Dict[str, Any]:
+    _enrich_product_with_ai(product)
+
+    violations: List[Dict[str, Any]] = []
+    risk_score = 100
 
     for rule in RULES:
+        rule_id = rule["id"]
+
+        if rule_id in SKIPPED_RULE_IDS:
+            continue
+
+        rule_category = rule.get("category", "all")
+        if rule_category not in ("all", None, product.category):
+            continue
+
+        missing = []
         for field in rule.get("required_fields", []):
-            if field not in fields:
-                value = getattr(product, field, None)
-                fields[field] = bool(value)
+            if field in UNVERIFIABLE_FIELDS:
+                continue
+            if not _field_exists(product, field):
+                missing.append(field)
 
-    return fields
+        if not missing:
+            continue
 
+        if rule_id in ADVISORY_RULE_IDS:
+            violations.append({
+                "rule_id": rule_id,
+                "severity": "LOW",
+                "description": f"{rule['title']} (advisory)",
+                "suggestion": rule.get("suggestion", ""),
+            })
+            continue
 
-# =====================================================
-# CORE COMPLIANCE ENGINE
-# =====================================================
+        violations.append({
+            "rule_id": rule_id,
+            "severity": rule["severity"],
+            "description": f"{rule['title']} – missing: {', '.join(missing)}",
+            "suggestion": rule.get("suggestion", ""),
+        })
 
-def run_compliance_check(product: ProductData) -> Dict:
-    product_category = infer_product_category(product)
-    applicable_rules = get_applicable_rules(product_category)
-    field_index = build_field_index(product)
-
-    violations = []
-
-    for rule in applicable_rules:
-        missing_fields = [
-            f for f in rule.get("required_fields", [])
-            if not field_index.get(f, False)
-        ]
-
-        if missing_fields:
-            violations.append(
-                Violation(
-                    rule_id=rule["id"],
-                    severity=rule["severity"],
-                    description=f"{rule['title']} [{rule['law']}]",
-                    suggestion=(
-                        f"Ensure the following field(s) are disclosed: "
-                        f"{', '.join(missing_fields)}"
-                    )
-                )
-            )
-
-    # Risk score (simple & consistent)
-    score = 100
-    for v in violations:
-        if v.severity == "HIGH":
-            score -= 20
-        elif v.severity == "MEDIUM":
-            score -= 10
-        else:
-            score -= 5
-
-    score = max(0, score)
+        risk_score -= {"HIGH": 20, "MEDIUM": 10, "LOW": 5}.get(
+            rule["severity"], 0
+        )
 
     return {
-        "category": product_category,
-        "risk_score": score,
-        "violations": violations
+        "risk_score": max(0, risk_score),
+        "violations": violations,
     }
 
 
-# =====================================================
-# PUBLIC ENTRY POINT
-# =====================================================
+# --------------------------------------------------
+# BACKWARD COMPATIBILITY
+# --------------------------------------------------
 
-def evaluate_url(url: str) -> Dict:
-    product = scrape_product(url)
-    return run_compliance_check(product)
+def infer_product_category(product: ProductData) -> str:
+    text = f"{product.title or ''} {product.usage or ''}".lower()
+    if any(k in text for k in ["lotion", "cream", "cosmetic", "skin"]):
+        return "cosmetics"
+    return "general"
