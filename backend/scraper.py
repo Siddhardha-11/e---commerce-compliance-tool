@@ -425,7 +425,7 @@ def _safe_float(value: str):
 if __name__ == "__main__":
 
     test_urls = [
-        "https://amzn.in/d/aKD12Yo",
+        "https://www.snapdeal.com/product/fonizo-12w-dual-port-fast/658073004233",
         "https://amzn.in/d/2sgbIfs"
     ]
     for u in test_urls:
