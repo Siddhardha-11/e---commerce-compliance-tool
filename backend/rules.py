@@ -1,9 +1,12 @@
+# =====================================================
+# FINAL CONSOLIDATED COMPLIANCE RULES (87 RULES)
+# =====================================================
+
 RULES = [
 
 # =====================================================
 # GENERAL E-COMMERCE RULES (17)
 # =====================================================
-
 {
     "id": "EC-01",
     "title": "Seller name must be disclosed",
@@ -138,13 +141,12 @@ RULES = [
     "law": "Plastic Waste Management (Amendment) Rules, 2024",
     "category": "all",
     "severity": "MEDIUM",
-    "required_fields": ["epr_registration_no", "plastic_type_label"]
+    "required_fields": ["epr_registration_no"]
 },
 
 # =====================================================
 # ELECTRONICS RULES (9)
 # =====================================================
-
 {
     "id": "EL-01",
     "title": "Warranty or guarantee must be disclosed",
@@ -211,7 +213,7 @@ RULES = [
 },
 {
     "id": "EL-09",
-    "title": "Mandatory BIS for Household Appliances (Kettles/HairTools/Massagers)",
+    "title": "Mandatory BIS for Household Appliances",
     "law": "BIS Household Appliances QCO, 2025",
     "category": "electronics",
     "severity": "HIGH",
@@ -221,7 +223,6 @@ RULES = [
 # =====================================================
 # FOOD RULES (11)
 # =====================================================
-
 {
     "id": "FD-01",
     "title": "Expiry or best-before date must be mentioned",
@@ -314,7 +315,6 @@ RULES = [
 # =====================================================
 # HEALTH RULES (10)
 # =====================================================
-
 {
     "id": "HL-01",
     "title": "Medical disclaimer must be present",
@@ -337,7 +337,7 @@ RULES = [
     "law": "Drugs & Magic Remedies Act, 1954",
     "category": "health",
     "severity": "HIGH",
-    "required_fields": ["guaranteed", "100%"]
+    "required_fields": ["guaranteed"]
 },
 {
     "id": "HL-04",
@@ -399,7 +399,6 @@ RULES = [
 # =====================================================
 # CLOTHING / FASHION RULES (7)
 # =====================================================
-
 {
     "id": "CL-01",
     "title": "Fabric or material composition must be disclosed",
@@ -460,7 +459,6 @@ RULES = [
 # =====================================================
 # COSMETICS / PERSONAL CARE RULES (8)
 # =====================================================
-
 {
     "id": "CS-01",
     "title": "Complete ingredient list must be disclosed",
@@ -529,7 +527,6 @@ RULES = [
 # =====================================================
 # TOYS & BABY PRODUCTS RULES (6)
 # =====================================================
-
 {
     "id": "TY-01",
     "title": "Age appropriateness must be clearly specified",
@@ -548,7 +545,7 @@ RULES = [
 },
 {
     "id": "TY-03",
-    "title": "Choking or small-parts warning must be disclosed",
+    "title": "Choking hazard warning must be disclosed",
     "law": "Consumer Protection Act, 2019",
     "category": "toys",
     "severity": "HIGH",
@@ -556,7 +553,7 @@ RULES = [
 },
 {
     "id": "TY-04",
-    "title": "Material safety or non-toxic claim must be disclosed if applicable",
+    "title": "Material safety or non-toxic claim must be disclosed",
     "law": "Consumer Protection Act, 2019",
     "category": "toys",
     "severity": "MEDIUM",
@@ -580,9 +577,8 @@ RULES = [
 },
 
 # =====================================================
-# HOME APPLIANCES RULES (12)
+# HOME APPLIANCES RULES (9)
 # =====================================================
-
 {
     "id": "AP-01",
     "title": "Energy efficiency rating must be disclosed if applicable",
@@ -654,6 +650,128 @@ RULES = [
     "category": "appliances",
     "severity": "HIGH",
     "required_fields": ["bis_mark"]
-}
+},
 
+# =====================================================
+# BOOKS RULES (10)
+# =====================================================
+{
+    "id": "BK-01",
+    "title": "ISBN Number must be clearly visible",
+    "law": "Consumer Protection Act, 2019",
+    "category": "books",
+    "severity": "HIGH",
+    "required_fields": ["isbn"]
+},
+{
+    "id": "BK-02",
+    "title": "Edition and Year of Publication must be disclosed",
+    "law": "Legal Metrology (Packaged Commodities) Rules",
+    "category": "books",
+    "severity": "MEDIUM",
+    "required_fields": ["edition", "publication_year"]
+},
+{
+    "id": "BK-03",
+    "title": "Author and Publisher details must be mentioned",
+    "law": "Legal Metrology Rules",
+    "category": "books",
+    "severity": "MEDIUM",
+    "required_fields": ["author", "publisher"]
+},
+{
+    "id": "BK-04",
+    "title": "Language of the book must be specified",
+    "law": "Consumer Protection (E-Commerce) Rules, 2020",
+    "category": "books",
+    "severity": "LOW",
+    "required_fields": ["language"]
+},
+{
+    "id": "BK-05",
+    "title": "Binding Type (Hardcover/Paperback) must be stated",
+    "law": "Consumer Protection Act (Standard Disclosure)",
+    "category": "books",
+    "severity": "LOW",
+    "required_fields": ["binding_type"]
+},
+{
+    "id": "BK-06",
+    "title": "Number of Pages must be disclosed",
+    "law": "Legal Metrology (Quantity Declaration)",
+    "category": "books",
+    "severity": "LOW",
+    "required_fields": ["page_count"]
+},
+{
+    "id": "BK-07",
+    "title": "Front and Back Cover Images must be provided",
+    "law": "Legal Metrology (Packaged Commodities) Rule 6(10)",
+    "category": "books",
+    "severity": "HIGH",
+    "required_fields": ["images"]
+},
+{
+    "id": "BK-08",
+    "title": "MRP clearly visible on book or listing",
+    "law": "Legal Metrology Act",
+    "category": "books",
+    "severity": "HIGH",
+    "required_fields": ["price"]
+},
+{
+    "id": "BK-09",
+    "title": "Generic Name 'Book' disclosure",
+    "law": "Legal Metrology Rules",
+    "category": "books",
+    "severity": "LOW",
+    "required_fields": ["title"]
+},
+{
+    "id": "BK-10",
+    "title": "Anti-Piracy/Originality Declaration",
+    "law": "Copyright Act / CP Act",
+    "category": "books",
+    "severity": "MEDIUM",
+    "required_fields": ["description"]
+}
 ]
+
+# =====================================================
+# VALIDATION ENGINE (LOGIC TO PREVENT FALSE ALARMS)
+# =====================================================
+
+def check_compliance(product_data):
+    """
+    Validates product data against ONLY relevant rules.
+    product_data must include: 'category' (books, electronics, food, etc.)
+    """
+    p_cat = product_data.get("category", "all")
+    
+    # 1. Select ONLY 'all' rules and rules matching product category
+    active_rules = [r for r in RULES if r["category"] == "all" or r["category"] == p_cat]
+    
+    violations = []
+    final_severity = "LOW"
+    
+    # 2. Check each active rule
+    for rule in active_rules:
+        is_violating = False
+        for field in rule["required_fields"]:
+            if field not in product_data or not product_data[field]:
+                is_violating = True
+                break
+        
+        if is_violating:
+            violations.append(rule["id"])
+            # Update overall risk level based on severity of violation
+            if rule["severity"] == "HIGH":
+                final_severity = "HIGH"
+            elif rule["severity"] == "MEDIUM" and final_severity != "HIGH":
+                final_severity = "MEDIUM"
+                
+    return {
+        "status": "FAIL" if violations else "PASS",
+        "risk_level": final_severity,
+        "violated_rule_ids": violations
+    }
